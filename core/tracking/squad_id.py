@@ -1,4 +1,3 @@
-# squad_id.py
 from dataclasses import dataclass, field
 from typing import Dict, Optional, List, Tuple
 import numpy as np
@@ -50,10 +49,10 @@ class SquadIDManager:
         self.mapping: Dict[int, Tuple[str, int]] = {}
         # tid -> (team, role, [pos...], first_frame_seen)
         self.pending: Dict[int, Tuple[str, str, List[np.ndarray], int]] = {}
-        # mismatch counter
+        # licznik mismatch
         self.team_mismatch: Dict[int, int] = {}
 
-    # ---------- pomocnicze ----------
+    # ---------- funkcje pomocnicze ----------
     def _dist_to_slot(self, team: str, num: int, pos: Optional[np.ndarray]) -> float:
         s = self.slots[team][num]
         if pos is None or not np.isfinite(pos).all() or s.last_pos is None:
@@ -174,7 +173,7 @@ class SquadIDManager:
             if pos is None or not np.isfinite(pos).all():
                 continue
 
-            # --- Existing tracker ---
+            # --- Istniejące trackery ---
             if tid in self.mapping:
                 tm, num = self.mapping[tid]
                 s = self.slots[tm][num]
@@ -198,7 +197,7 @@ class SquadIDManager:
                     self.team_mismatch.pop(tid, None)
                     return dict(self.mapping)
 
-                # debounce (team_switch_hold) ---
+                # debounce (team_switch_hold) - Przytrzymanie decyzji zmiany drużyny ---
                 if tm != team:
                     prev = self.team_mismatch.get(tid, 0) + 1
                     self.team_mismatch[tid] = prev
@@ -219,7 +218,7 @@ class SquadIDManager:
                 else:
                     self.team_mismatch.pop(tid, None)
 
-            # --- new/returning tracker ---
+            # --- Nowy/powracający tracker ---
             else:
                 if tid not in self.pending:
                     self.pending[tid] = (team, role, [pos], frame_idx)
@@ -234,7 +233,7 @@ class SquadIDManager:
                             self._assign(tid, team, role, avg, frame_idx)
                             self.pending.pop(tid, None)
 
-        # --- anti-duplicates ---
+        # --- anty-duplikaty ---
         teamnum_to_tids: Dict[Tuple[str, int], List[int]] = {}
         for tid, (tm, num) in list(self.mapping.items()):
             if tid in seen_tids and tm in ("TEAM A", "TEAM B"):
@@ -316,7 +315,7 @@ class SquadIDManager:
             if frame_idx - first > self.ttl_frames:
                 self.pending.pop(tid, None)
 
-        # ===== [DEBUG] miss_count all slots) =====
+        # ===== [DEBUG] miss_count dla wszystkich slotów (głównie miejsce debuggingu ReID) =====
         if frame_idx % 5 == 0:
             def _line(team: str) -> str:
                 parts = []
@@ -324,7 +323,7 @@ class SquadIDManager:
                     s = self.slots[team][n]
                     val = s.miss_count
                     star = "*" if val > self.ttl_frames else ""
-                    occ = "!" if s.tid is not None else ""  # ! = slot zajęty
+                    occ = "!" if s.tid is not None else ""
                     parts.append(f"#{n}={val}{star}{occ}")
                 return " ".join(parts)
             print(f"[miss] TEAM A: {_line('TEAM A')}  |  TEAM B: {_line('TEAM B')} @frame {frame_idx}")

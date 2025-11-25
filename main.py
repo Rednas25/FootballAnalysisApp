@@ -18,8 +18,6 @@ from core import (analysis_maps as am, replay_overlays as ro,
     Settings, YoloRunner, JerseyColorExtractor, run_single_role, VideoPipeline,)
 from core.config import (PLAYERS_MODEL_PATH)
 
-# ------------------------------- IMAGE PROVIDER -------------------------------
-
 class ReplayImageProvider(QQuickImageProvider):
     """
     Udostępnia ostatnią klatkę oraz minimapę jako QImage w pamięci.
@@ -92,7 +90,7 @@ class Backend(QObject):
         self.replay_dir = ""
         self._last_run_dir = ""
         self._image_provider = image_provider
-        # --- REPLAY STATE ---
+        # --- REPLAY ---
         self._replay_video_path = ""
         self._replay_cap = None
         self._replay_annotations = {}
@@ -110,12 +108,12 @@ class Backend(QObject):
         self._pitch_minimap = None        # cv2 obraz boiska dla minimapy
         self._minimap_image_path = ""     # URL dla QML: image://replay/minimap?f=N
 
-        # Flags do włączania / wyłączania annotacji (global)
+        # Flagi do włączania / wyłączania annotacji (global)
         self._show_labels_global = True
         self._show_triangles_global = True
         self._show_kp = True  # pitch keypoints
 
-        # Flags per-team dla labeli i trójkątów
+        # Flagi per-team dla labeli i trójkątów
         self._lab_teamA = True
         self._lab_teamB = True
         self._lab_ref = True
@@ -129,7 +127,7 @@ class Backend(QObject):
         self._selection_start_norm = 0.0
         self._selection_end_norm = 1.0
 
-        # URL używany w QML (Image -> source)
+        # URL używany w QML
         self._replay_frame_path = ""
         project_root = Path(__file__).parent
         default_png = project_root / "assets/gui_files/background_load.png"
@@ -286,7 +284,7 @@ class Backend(QObject):
         p = self._heatmap_images[self._heatmap_index]
         self._set_heatmap_image(p, self._heatmap_label_from_path(p))
 
-    # --- Minimap (2D map replay) ---
+    # --- Minimap (2D mapka dla podglądu) ---
 
     def _init_team_colors_from_annotations(self):
         colors = {}
@@ -378,7 +376,7 @@ class Backend(QObject):
                 # drużyna
                 team = (row.get("team") or "").strip().upper()
 
-                # numer zawodnika (opcjonalnie)
+                # numer zawodnika
                 number = None
                 try:
                     num_str = (row.get("number") or "").strip()
@@ -565,7 +563,6 @@ class Backend(QObject):
         if end_frame < start_frame:
             start_frame, end_frame = end_frame, start_frame
 
-        # katalog: analysis_<start>-<end> w obrębie replay_dir
         analysis_dir = dir_path / f"analysis_{start_frame}-{end_frame}"
         analysis_dir.mkdir(parents=True, exist_ok=True)
 
@@ -589,7 +586,7 @@ class Backend(QObject):
             print("[Backend] generateAveragePositions: brak danych po filtrach (nic do zapisania).")
             return
 
-        # Ścieżka do pitch.png w projekcie
+        # Ścieżka do pitch.png
         project_root = Path(__file__).parent
         pitch_path = project_root / "assets" / "pitch" / "pitch.png"
 
@@ -736,7 +733,7 @@ class Backend(QObject):
         analysis_dir = dir_path / f"analysis_{start_frame}-{end_frame}"
         analysis_dir.mkdir(parents=True, exist_ok=True)
 
-        # w nim podfolder homography/...
+        # podfolder homography/...
         heatmaps_root = analysis_dir / "homography"
         per_player_dir = heatmaps_root / "players"
         per_team_dir = heatmaps_root / "teams"
@@ -763,7 +760,6 @@ class Backend(QObject):
                 if num not in playersB:
                     continue
             else:
-                # inne teamy na razie pomijamy
                 continue
 
             if len(pts) < min_samples:
@@ -839,7 +835,7 @@ class Backend(QObject):
             self.hideHeatmapPreview()
             self._init_replay_session()
         else:
-            print("[Backend] ❌ Podana ścieżka nie jest katalogiem:", path)
+            print("[Backend] Podana ścieżka nie jest katalogiem:", path)
 
     @Slot(float, float)
     def setSelectionRange(self, startNorm: float, endNorm: float):
@@ -961,14 +957,12 @@ class Backend(QObject):
 
     @Slot(bool)
     def setShowLabels(self, enabled: bool):
-        # optional global master switch na labele
         self._show_labels_global = bool(enabled)
         if self._replay_frame_idx > 0:
             self._seek_replay_frame(self._replay_frame_idx)
 
     @Slot(bool)
     def setShowTriangles(self, enabled: bool):
-        # optional global master switch na trójkąty
         self._show_triangles_global = bool(enabled)
         if self._replay_frame_idx > 0:
             self._seek_replay_frame(self._replay_frame_idx)
@@ -1018,7 +1012,7 @@ class Backend(QObject):
                 break
 
         if not candidates:
-            print("[Backend] ❌ Brak pliku .mp4 w katalogu replay:", dir_path)
+            print("[Backend] Brak pliku .mp4 w katalogu replay:", dir_path)
             return
 
         video_path = str(candidates[0])
@@ -1027,7 +1021,7 @@ class Backend(QObject):
 
         cap = cv2.VideoCapture(video_path)
         if not cap.isOpened():
-            print("[Backend] ❌ Nie można otworzyć wideo do replay:", video_path)
+            print("[Backend] Nie można otworzyć wideo do replay:", video_path)
             return
 
         total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
@@ -1066,8 +1060,7 @@ class Backend(QObject):
 
     def _render_replay_frame(self, frame_idx: int, frame):
         """
-        Rysuje annotacje na podanej klatce i wysyła ją do QML przez
-        ReplayImageProvider (bez zapisu na dysk).
+        Rysuje annotacje na podanej klatce i wysyła ją do QML przez ReplayImageProvider.
         """
         if self._replay_total_frames <= 0:
             return
@@ -1089,7 +1082,7 @@ class Backend(QObject):
         else:
             lab_anns = []
 
-        # 1) rysujemy trójkąty (bez labeli i bez pitch)
+        # 1) rysujemy trójkąty
         if tri_anns:
             frame = ro.draw_overlays(
                 frame,
@@ -1135,7 +1128,6 @@ class Backend(QObject):
     def _seek_replay_frame(self, frame_idx: int):
         """
         Przy seeku otwieramy nowe VideoCapture i odtwarzamy od początku do frame_idx.
-        (Wariant "brutalny, ale poprawny" – jak w replay_overlays.py.)
         """
         if not self._replay_video_path or self._replay_total_frames <= 0:
             return
@@ -1151,7 +1143,7 @@ class Backend(QObject):
 
         cap = cv2.VideoCapture(self._replay_video_path)
         if not cap.isOpened():
-            print("[Backend] ❌ _seek_replay_frame: nie udało się otworzyć wideo:", self._replay_video_path)
+            print("[Backend] _seek_replay_frame: nie udało się otworzyć wideo:", self._replay_video_path)
             return
 
         self._replay_cap = cap
@@ -1224,7 +1216,7 @@ class Backend(QObject):
 
     def _select_role(self, key: str):
         if not self.video_path:
-            print("❌ Najpierw wybierz plik wideo (Load).")
+            print("Najpierw wybierz plik wideo (Load).")
             return
 
         print(f"[Backend] Start setup colors for: {key}, video={self.video_path}")
@@ -1403,7 +1395,7 @@ class Backend(QObject):
                         print("[Backend] Trim error:", e)
                         return False
 
-                # Wyjście: zawsze input_video.mp4 w folderze run’u
+                # Wyjście: input_video.mp4 w folderze run’u
                 trimmed_input_path = run_dir / "input_video.mp4"
 
                 src = Path(self.video_path)

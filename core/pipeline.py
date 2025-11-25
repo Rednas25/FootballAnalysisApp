@@ -92,8 +92,8 @@ class VideoPipeline:
         hold_frames = max(1, int(self.cfg.BASE_HOLD_SEC * fps))
         self.stab = Stabilizer(self.cfg.MARGIN_MIN, hold_frames, self.cfg.PROX_FACTOR)
 
-        self.STRONG_COLOR_MARGIN = TRACK_STRONG_COLOR_MARGIN   # strong flip requirment
-        self.WEAK_COLOR_PENALTY  = TRACK_WEAK_COLOR_PENALTY    # weak color -> longer hold
+        self.STRONG_COLOR_MARGIN = TRACK_STRONG_COLOR_MARGIN   # warunek szybkiej zmiany drużyny
+        self.WEAK_COLOR_PENALTY  = TRACK_WEAK_COLOR_PENALTY    # słaby kolor -> dłuższe przytrzymanei decyzji
 
         os.makedirs(os.path.dirname(cfg.output_path), exist_ok=True)
         os.makedirs(cfg.frames_dir, exist_ok=True)
@@ -139,14 +139,14 @@ class VideoPipeline:
         cv2.imshow("MiniMap", mm)
 
 
-    # [REID-DEBUG] Draw minimap with prediction of lost points
+    # [REID-DEBUG] Rysowanie minimapy ze strefami przewidywanych pozycji zawodników
     def _render_minimap_with_zones(self, pts_by_id: dict, colors_by_id: dict, zones: list):
         if not self.show_minimap:
             return
         mm = self._minimap.copy()
         h, w = mm.shape[:2]
 
-        # 1) debug ReID
+        # 1) rysowanie stref ReID (debug)
         overlay = mm.copy()
         for z in (zones or []):
             team = z.get("team")
@@ -416,7 +416,7 @@ class VideoPipeline:
                                     pass
                             self.referee_ids = chosen_ids
 
-                # GK: 1 per team, bonus in penalty box
+                # GK: 1 na drużyne, z premią w polu karnym
                 gk_idxs = [i for i, p in enumerate(proposals) if p and p['cls'] == 'goalkeeper']
                 if len(gk_idxs) > 0:
                     buckets = {"TEAM A": [], "TEAM B": []}  # (score, i)
@@ -511,10 +511,9 @@ class VideoPipeline:
                         label_colors[i] = st.color; triangle_colors[i] = st.color
                         continue
 
-                    # --- [APPEARANCE-GATE] Strong color -> fast change
+                    # --- [APPEARANCE-GATE] Silny sygnał koloru - szybka zmiana drużyny
                     strong_color = (margin is not None and margin >= self.STRONG_COLOR_MARGIN)
-                    # [REF-GUARD] Don't flip from ex referee
-                    # jeśli kolor sugeruje nadal 'referee', blokujemy szybkie przełączenie
+                    # [REF-GUARD] Brak szybkich przełączeń z roli sędziego
                     if ((st.team == 'referee') or (obj_id in self.referee_ids)) and (prop is None or prop.get('team') == 'referee'):
                         strong_color = False
 
@@ -538,7 +537,7 @@ class VideoPipeline:
                         label_colors[i] = st.color; triangle_colors[i] = st.color
                         continue
 
-                    # --- Debounce (HOLD) ---
+                    # --- Debounce (HOLD) - opóźnienie zmiany drużyny  ---
                     hold_frames = int(self.stab.hold_frames_base * (self.stab.prox_factor if close_neighbors[i] else 1.0))
 
                     if st.pending_team != proposed_team:
@@ -546,7 +545,7 @@ class VideoPipeline:
 
                     elapsed = frame_idx - (st.pending_since_frame or frame_idx)
                     required = max(hold_frames, self.stab.min_switch_frames)
-                    # --- [APPEARANCE-GATE] weak color -> hold ---
+                    # --- [APPEARANCE-GATE] Słaby kolor - dłuższe podtrzymanie starej drużyny ---
                     required = int(required * self.WEAK_COLOR_PENALTY)
                     # debug - weak penalty
                     # print(f"[appearance] weak penalty: tid={obj_id} margin={margin if margin is not None else -1:.3f} "
@@ -561,11 +560,11 @@ class VideoPipeline:
                         label_texts[i] = f'{st.team} #{obj_id}'
                         label_colors[i] = st.color; triangle_colors[i] = st.color
 
-                # ====== LIMIT 10 players per team ======
+                # ====== LIMIT: maksymalnie 10 zawodników na drużynę (bez bramkarza) ======
                 hidden_idxs = set()
                 if len(detections) > 0:
                     H, W = frame.shape[:2]
-                    buckets = {"TEAM A": [], "TEAM B": []}  # listy: (priority_score, idx)
+                    buckets = {"TEAM A": [], "TEAM B": []}  # listy par: (priorytet, indeks detekcji)
 
                     for i in range(len(detections)):
                         cname = names[i]
@@ -579,7 +578,7 @@ class VideoPipeline:
                         except Exception:
                             pass
 
-                        # select team
+                        # Wybór drużynny
                         st_i = self.stab.get(int(tracker_ids[i]))
                         team_key = None
                         if st_i and st_i.team and ('TEAM A' in st_i.team or 'TEAM B' in st_i.team):
@@ -607,7 +606,7 @@ class VideoPipeline:
                         priority = (0.6 * conf) + (0.3 * center_bonus) + (0.1 * recency) + (0.1 * central)
                         buckets[team_key].append((priority, i))
 
-                    #Select top 10 per team
+                    # Wybierz 10 najwyższych priorytetow na drużynę
                     for team_key, arr in buckets.items():
                         if len(arr) <= 10:
                             continue
@@ -622,7 +621,7 @@ class VideoPipeline:
                             triangle_colors[i] = None
                             label_colors[i] = None
 
-                # === Change labels ===
+                # === aktualizacja etykiet (dodanie numerów 1–11)  ===
                 tid_to_teamnum = {}
                 reid_zones = []  # [REID-DEBUG]
                 if self.homo.is_ready() and len(detections) > 0:
@@ -641,13 +640,13 @@ class VideoPipeline:
                             self._last_seen_tid[tid_i] = frame_idx
                             continue
 
-                        #Position of box
+                        # Pozycja
                         x1, y1, x2, y2 = map(float, detections.xyxy[i])
                         foot = np.array([[0.5 * (x1 + x2), y2]], dtype=np.float32)
                         p01 = self.homo.image_to_pitch01(foot)
                         pt = p01[0] if p01 is not None else None
 
-                        # team – stabilizator --> proposal
+                        # drużyna – stabilizator - propozycja zmiany
                         st_i = self.stab.get(tid_i)
                         tkey = None
                         if st_i and st_i.team and ('TEAM A' in st_i.team or 'TEAM B' in st_i.team):
@@ -658,7 +657,7 @@ class VideoPipeline:
 
                         role = 'GK' if cname == 'goalkeeper' else 'player'
 
-                        # --- REAPPEAR GUARD ---
+                        # --- Ponowne pojawienie się ---
                         last_seen_prev = self._last_seen_tid.get(tid_i, None)
                         is_reappear = (last_seen_prev is not None) and ((frame_idx - last_seen_prev) > 1)
                         if is_reappear:
@@ -689,7 +688,7 @@ class VideoPipeline:
                 # --- START POMIARU LOGOWANIA / I/O ---
                 t_log_start = time.perf_counter()
 
-                # === Position logger to csv ===
+                # === logger pozycji do csv ===
                 if len(detections) > 0 and self.homo.is_ready():
                     try:
                         self.pos_logger.log_from_detections(
@@ -705,7 +704,7 @@ class VideoPipeline:
                     except Exception as e:
                         print("positions_logger warn:", e)
 
-                # Change numbers to 1-11
+                # Zmiena numerów
                 for i in range(len(detections)):
                     cname = names[i]
                     if cname not in ('player', 'goalkeeper'):
@@ -725,7 +724,7 @@ class VideoPipeline:
                             base = base + f' {tag}'
                         label_texts[i] = base
 
-                # === PLAYERS POSITION ON 2D MAP ===
+                # === Pozycje zawodników na mapie ===
                 if self.homo.is_ready():
                     colors_by_id: Dict[str, tuple] = {}
                     for i in range(len(detections)):
@@ -760,7 +759,7 @@ class VideoPipeline:
                     # [REID-DEBUG] render z widocznymi strefami ReID
                     self._render_minimap_with_zones(self.traj_pitch, colors_by_id, reid_zones)
 
-                # [REID-DEBUG] log: assign and duplicate
+                # [REID-DEBUG] log: przydziały i duplikaty
                 # if tid_to_teamnum:
                 #     for tid_i, teamnum in tid_to_teamnum.items():
                 #         prev = self._prev_teamnum.get(tid_i)
@@ -776,7 +775,7 @@ class VideoPipeline:
                 #
                 #     self._prev_teamnum = dict(tid_to_teamnum)
 
-                # CSV logger ---
+                # CSV logger
                 try:
                     self.ann_logger.log_frame(
                         frame_idx=frame_idx,
@@ -794,7 +793,7 @@ class VideoPipeline:
                 t_log_end = time.perf_counter()
                 self._perf_stats["logging"] += (t_log_end - t_log_start)
 
-                # 6)Render + Save
+                # 6)Render + zapis
                 rendered = annotate_people_custom_labels(
                     frame.copy(), detections, self.yolo.model.model.names, label_texts, label_colors, triangle_colors_bgr=triangle_colors
                 )
@@ -828,17 +827,17 @@ class VideoPipeline:
                     print(f"  Logging / I/O  : {avg_log_ms:6.2f} ms/klatka")
                     print(f"  SUMA ≈         : {total_ms:6.2f} ms/klatka  (~{fps_est:5.1f} FPS offline)")
 
-                #--- STOP button purposes ---
+                #--- Dla przycisku stop analizy ---
                 self._last_frame_idx = frame_idx
                 if self._stop_requested:
                     break
 
-                # --- YOLO preview  ---
+                # --- Podgląd yolo  ---
                 if self.show_preview:
                     self._ensure_preview_window()
                     cv2.imshow(self._preview_window_name, rendered)
 
-                # --- One loop for all windows ---
+                # --- Jedna pętla dla wszystkich okien ---
                 key = -1
                 if self.show_preview or self.show_minimap:
                     key = cv2.waitKey(self.delay_ms) & 0xFF
@@ -855,7 +854,7 @@ class VideoPipeline:
 
                 t_frame_end = time.perf_counter()
                 self._perf_stats["frame_total"] += (t_frame_end - t_frame_start)
-        # --- Close csv logger ---
+        # --- Zamknięcie loggera ---
         try:
             self.pos_logger.close()
             print(f"Position Saved to: {self.pos_logger.csv_path}")
@@ -896,7 +895,7 @@ class VideoPipeline:
         print(f"  SUMA (bez GUI + sink) ≈ : {total_ms:6.2f} ms/klatka")
         print(f"  REAL frame time (FULL) : {avg_frame_ms:6.2f} ms/klatka  (~{fps_real:5.1f} FPS end-to-end)")
 
-        # --- (opcjonalnie) Podsumowanie YOLO z YoloRunner ---
+        # --- Podsumowanie YOLO z YoloRunner ---
         try:
             if hasattr(self.yolo, "print_perf_summary"):
                 print("\n=== YOLO (players) PERF SUMMARY ===")

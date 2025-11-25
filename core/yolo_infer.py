@@ -31,17 +31,12 @@ class YoloRunner:
         imgsz: int = 1280,
         conf: float = 0.4,
     ):
-        # wybór urządzenia
         self.device = _auto_select_device(device)
-
-        # załadowanie modelu
         self.model = YOLO(model_path)
-
-        # przerzucamy model na GPU (ale zostawiamy FP32 – half robimy w predict)
         if self.device == "cuda":
             try:
                 self.model.to("cuda")
-                print("[YOLO] Model moved to CUDA (FP32)")
+                print("[YOLO] Model moved to CUDA")
             except Exception as e:
                 print("[YOLO] Could not move model to CUDA:", e)
 
@@ -60,10 +55,8 @@ class YoloRunner:
     def predict_video_stream(self, source):
         """
         Strumieniowa predykcja YOLO z prostym pomiarem czasu na klatkę.
-        HALF precision włączamy przez parametr `half=` tylko na GPU.
         """
         start = time.perf_counter()
-
         for result in self.model.predict(
             source=source,
             device=self.device,
@@ -71,24 +64,22 @@ class YoloRunner:
             conf=self.conf,
             agnostic_nms=True,
             iou=0.58,
-            max_det=300,
+            max_det=100,
             save=False,
             stream=True,
             verbose=False,
-            half=(self.device == "cuda"),  # <-- FP16 tylko na GPU
+            half=(self.device == "cuda"),  # FP16 dla GPU dla poprawy wydajności
         ):
             end = time.perf_counter()
-            # czas od poprzedniego yielda do tego = ~czas przetwarzania 1 klatki przez YOLO
+            # ~czas przetwarzania 1 klatki przez YOLO
             self._perf_frames += 1
             self._perf_time += (end - start)
 
             yield result
-
-            # przygotuj start do pomiaru następnej iteracji
             start = time.perf_counter()
 
     def print_perf_summary(self):
-        """Wypisuje ⌀ czas YOLO na 1 klatkę + FPS."""
+        """Wypisuje czas YOLO na 1 klatkę + FPS."""
         if self._perf_frames <= 0 or self._perf_time <= 0.0:
             print("[YOLO PERF] Brak danych (nie wykonano predykcji).")
             return
@@ -96,4 +87,4 @@ class YoloRunner:
         avg_ms = (self._perf_time / self._perf_frames) * 1000.0
         fps = 1000.0 / avg_ms
         print("[YOLO PERF] Frames:", self._perf_frames)
-        print(f"[YOLO PERF] ⌀ {avg_ms:.2f} ms/klatka  (~{fps:.1f} FPS tylko YOLO)")
+        print(f"[YOLO PERF] {avg_ms:.2f} ms/klatka  (~{fps:.1f} FPS tylko YOLO)")

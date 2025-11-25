@@ -75,7 +75,7 @@ class PositionsLogger:
         if frame_idx < self.start_frame:
             return
         if homography is None or not homography.is_ready():
-            return  # brak wiarygodnych współrzędnych pitch01
+            return  # brak wiarygodnych współrzędnych pitch2D
 
         ref_ids = set(referee_ids or [])
 
@@ -98,7 +98,7 @@ class PositionsLogger:
             team_tag, num = tid_to_teamnum[tid_i]
             role = "GK" if cname == "goalkeeper" else "player"
 
-            # pozycja: użyj „pięty” bboxa jak w pipeline
+            # pozycja: użycie dołu  bboxa
             x1, y1, x2, y2 = map(float, detections.xyxy[i])
             foot = np.array([[0.5 * (x1 + x2), y2]], dtype=np.float32)
             p01 = homography.image_to_pitch01(foot)
@@ -108,7 +108,7 @@ class PositionsLogger:
             if not (0.0 <= p01_xy[0] <= 1.0 and 0.0 <= p01_xy[1] <= 1.0):
                 continue
 
-            # gate: pending switch w Stabilizerze ⇒ pomiń
+            # gate: pending switch w Stabilizerze -> pomiń
             st_i = stabilizer.get(tid_i)
             pending = (st_i.pending_team is not None)
 

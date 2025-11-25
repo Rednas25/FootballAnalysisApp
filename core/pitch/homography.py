@@ -30,7 +30,7 @@ class HomographyEstimator:
         if H_ransac is None:
             return self.H
 
-        # 2) Refinement: zwykłe LS na samych inlierach (dokładniej)
+        # 2) Refinement: zwykłe LS na samych inlierach
         inl = inlier_mask.ravel().astype(bool) if inlier_mask is not None else None
         if inl is not None and inl.sum() >= 4:
             H_refine, _ = cv2.findHomography(img[inl], tmpl[inl], 0)

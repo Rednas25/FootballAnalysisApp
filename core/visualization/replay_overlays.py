@@ -19,10 +19,7 @@ from .annotation import (
 VIDEO_PATH = r"C:\Users\kacpe\PycharmProjects\fussball2\assets\videos\czelsiliv(normalcolors).mp4"
 FRAMES_DIR = r"C:\Users\kacpe\PycharmProjects\fussball2\assets\frames"
 START_FRAME = 1
-
-# Jeśli chcesz maksymalny możliwy FPS – ustaw na False (delay 1 ms)
-LOCK_TO_VIDEO_FPS = True  # False = zawsze delay 1 ms
-
+LOCK_TO_VIDEO_FPS = True
 
 # ==============================
 #   FUNKCJE POMOCNICZE
@@ -52,7 +49,7 @@ def load_annotations(csv_path: str):
     - bbox -> tuple intów
     - tekst
     - kolory (label/triangle)
-    Dzięki temu w pętli nie ma już konwersji string->float/int.
+    Dzięki temu w pętli nie ma już konwersji string -> float/int.
     """
     ann_by_frame = {}
     if not os.path.isfile(csv_path):
@@ -142,7 +139,7 @@ def draw_overlays(
 ):
     h, w = frame.shape[:2]
 
-    # ===== 1) TRÓJKĄTY NAD GŁOWĄ (tak jak w pipeline) =====
+    # ===== 1) TRÓJKĄTY NAD GŁOWĄ  =====
     if show_triangles:
         for ann in annotations_for_frame or []:
             x1, y1, x2, y2 = ann["bbox"]
@@ -164,7 +161,7 @@ def draw_overlays(
                 margin=LABEL_MARGIN,
             )
 
-    # ===== 2) LABEL NAD TRÓJKĄTEM – BATCH OVERLAY =====
+    # ===== 2) LABEL NAD TRÓJKĄTEM =====
     if show_labels:
         overlay = frame.copy()
         text_items = []
@@ -210,14 +207,10 @@ def draw_overlays(
         # teraz tekst na finalnym obrazie
         for text, (tx, ty), label_color in text_items:
             cv2.putText(
-                frame,
-                text,
-                (tx, ty),
-                font,
-                fs,
-                label_color,
-                thickness,
-                cv2.LINE_AA,
+                frame, text,
+                (tx, ty), font,
+                fs, label_color,
+                thickness, cv2.LINE_AA,
             )
 
     # ===== 3) KEYPOINTY BOISKA =====

@@ -20,11 +20,11 @@ class KMeansParams:
     max_iter: int = 30
     eps: float = 0.4
 
-    # discarding and merging clusters
-    min_cluster_ratio: float = 0.03   # discard clusters <3% of ROI pixels
-    merge_delta_ab: float = 6.0       # connect centroids if ||Δab|| <= 6 w a*b
+    # odrzucanie i łączenie klastrów
+    min_cluster_ratio: float = 0.03   # minimalny rozmiar klastra
+    merge_delta_ab: float = 6.0       # połącz centroidy jeśli, odległość euklidesowa mniejsza niż ...
 
-    # ROI pixel thresholds for increasing K
+    # Minimalna liczba próbek dla kolejnych k w k-means
     min_samples_for_k4: int = 450
     min_samples_for_k5: int = 900
 
@@ -34,8 +34,8 @@ class ExtractorConfig:
     kmeans: KMeansParams = field(default_factory=KMeansParams)
 
     reject_grass_by_ab: bool = False
-    grass_a_thr: int = 10   # a* < 10
-    grass_b_thr: int = 15   # b* > 15
+    grass_a_thr: int = 10
+    grass_b_thr: int = 15
 
 class JerseyColorExtractor:
     def __init__(self, config: Optional[ExtractorConfig] = None):
@@ -232,9 +232,8 @@ class JerseyColorExtractor:
         """
         Buduje mieszankę kolorów dla EMD.
 
-        UWAGA: teraz zwraca centra w przestrzeni 3D [L, a, b],
-        gdzie L to MEDIANA jasności z całego ROI (jedna L na całą koszulkę).
-        Dzięki temu czarne vs białe koszulki mocniej się różnią.
+        zwraca centra w przestrzeni 3D [L, a, b],
+        gdzie L to MEDIANA jasności z całego ROI (jedna L na całą koszulkę, by ograniczyć wpłw miejscowych cieni).
         """
         centers = analysis.get("centers_ab")
         counts = analysis.get("counts")
@@ -269,7 +268,6 @@ class JerseyColorExtractor:
         if cap_each is not None:
             weights = np.minimum(weights, float(cap_each))
 
-        # --- reweight gamma ---
         if reweight_gamma is not None and reweight_gamma > 0:
             weights = np.power(weights, float(reweight_gamma))
 
@@ -279,13 +277,13 @@ class JerseyColorExtractor:
         else:
             weights = np.ones_like(weights, dtype=np.float32) / float(len(weights))
 
-        # --- DODANE: budowa 3D [L, a, b] ---
+        # --- budowa 3D [L, a, b] ---
         lab_img = analysis.get("lab", None)
         if lab_img is not None and getattr(lab_img, "size", 0) > 0:
             L_all = lab_img[..., 0].astype(np.float32)
             L_global = float(np.median(L_all))
         else:
-            # sensowny fallback
+            # fallback
             L_global = 170.0
 
         L_vec = np.full((centers.shape[0], 1), L_global, dtype=np.float32)
@@ -362,7 +360,8 @@ class JerseyColorExtractor:
 
         return {"roi": roi_bgr, **km, "swatches_bgr": swatches_bgr}
 
-# --- quick test: python jersey_colors.py --image path.jpg --box 700 180 770 360
+# --- możliwosć szybkiego sprawdzenia dla pojedyńczego boxa:
+# python jersey_colors.py --image path.jpg --box 700 180 770 360
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()

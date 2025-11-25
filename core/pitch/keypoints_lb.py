@@ -7,7 +7,7 @@ try:
 except Exception:
     torch = None
 
-
+# Wybór cpu, a cuda
 def _auto_select_device(device: str | None = "auto") -> str:
     if device and device != "auto":
         return str(device)
@@ -36,6 +36,7 @@ class PitchKeypointsDetectorLB:
         self.device = _auto_select_device(device)
         self.model = YOLO(weights_path)
 
+        # Przerzut na cuda jeśli dostępne
         if self.device == "cuda":
             try:
                 self.model.to("cuda")
@@ -52,7 +53,6 @@ class PitchKeypointsDetectorLB:
     def infer_keypoints(self, frame_bgr: np.ndarray):
         H, W = frame_bgr.shape[:2]
 
-        # Ultralytics poprawnie obsługuje FP16 przez parametr half=
         res = self.model.predict(
             source=frame_bgr,
             device=self.device,
@@ -60,7 +60,7 @@ class PitchKeypointsDetectorLB:
             imgsz=self.imgsz,
             verbose=False,
             max_det=1,
-            half=(self.device == "cuda"),  # <-- FP16 tylko na GPU
+            half=(self.device == "cuda"),  # <- FP16 tylko na GPU(CUDA)
         )[0]
 
         pts_dict, conf_dict = {}, {}

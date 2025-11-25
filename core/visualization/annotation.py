@@ -1,4 +1,3 @@
-# annotation.py
 import numpy as np
 import supervision as sv
 import cv2
@@ -12,9 +11,6 @@ LABEL_ALPHA = 0.25
 LABEL_MARGIN = 8
 
 def _draw_triangle_top(frame, xyxy, color_bgr, base=TRI_BASE, height=TRI_HEIGHT, margin=LABEL_MARGIN):
-    """
-    Draw a triangle over player
-    """
     x1, y1, x2, y2 = map(int, xyxy)
     cx = (x1 + x2) // 2
     y_top = max(0, y1 - margin)
@@ -28,9 +24,6 @@ def _draw_triangle_top(frame, xyxy, color_bgr, base=TRI_BASE, height=TRI_HEIGHT,
 
 
 def _draw_label_top(frame, xyxy, text, text_color_bgr, alpha=LABEL_ALPHA, y_offset_px=0):
-    """
-    Draws a semi-transparent background and text above the box
-    """
     x1, y1, x2, y2 = map(int, xyxy)
     overlay = frame.copy()
     font = cv2.FONT_HERSHEY_SIMPLEX
@@ -57,15 +50,11 @@ def _draw_label_top(frame, xyxy, text, text_color_bgr, alpha=LABEL_ALPHA, y_offs
     cv2.putText(frame, text, (tx, ty), font, fs, text_color_bgr, th, cv2.LINE_AA)
     return frame
 
-def annotate_people_custom_labels(frame,
-                                       detections: sv.Detections,
-                                       id_to_name: dict,
-                                       label_texts: list,
+def annotate_people_custom_labels(frame, detections: sv.Detections,
+                                       id_to_name: dict, label_texts: list,
                                        label_colors_bgr: list,
                                        triangle_colors_bgr: list = None):
-    """
-    Draws triangles and labels over players/goalkeepers/referees in team/role colors.
-    """
+
     if len(detections) == 0:
         return frame
 
@@ -96,8 +85,8 @@ def annotate_people_custom_labels(frame,
 
     return frame
 
-# Loggery (do csv by potem odtworzyć annotacje na preview)
 
+# Loggery
 class AnnotationLogger:
     """
     Loguje to, co jest rysowane na klatce:

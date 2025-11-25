@@ -13,8 +13,8 @@ HELP_DRAW   = "LPM: rysuj/pusc = zaakceptuj | r=reset | f=OK | x=pomin | q=wyjdz
 
 ROLE_SEQUENCE = [
     ("teamA_player",     "Wybierz Zawodnika druzyny A  (narysuj box na koszulce)"),
-    ("teamB_player",     "Wybierz Zawodnika druzyny A(narysuj box na koszulce)"),
-    ("teamA_goalkeeper", "Wybierz Bramkarza druzyny B (narysuj box na koszulce)"),
+    ("teamB_player",     "Wybierz Zawodnika druzyny B (narysuj box na koszulce)"),
+    ("teamA_goalkeeper", "Wybierz Bramkarza druzyny A (narysuj box na koszulce)"),
     ("teamB_goalkeeper", "Wybierz Bramkarza druzyny B (narysuj box na koszulce)"),
     ("referee",          "Wybierz Sedziego (narysuj box)"),
 ]
@@ -32,12 +32,11 @@ def _draw_rect(img, p1, p2, color=BOX_COLOR, thick=BOX_THICK):
 
 def browse_frames(video_path: str, caption: Optional[str] = None) -> Tuple[Optional[int], Optional[np.ndarray]]:
     """
-    PRZEGLĄDARKA KLATEK — teraz z opcjonalnym 'caption' (np. nazwa roli),
-    abyś mógł wybrać INNĄ klatkę dla każdej roli (A/B/GK/REF).
+    PRZEGLĄDARKA KLATEK
     """
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
-        print("❌ Nie można otworzyć wideo:", video_path); return None, None
+        print("Nie można otworzyć wideo:", video_path); return None, None
     total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     fps   = cap.get(cv2.CAP_PROP_FPS) or 25.0
 
@@ -60,7 +59,7 @@ def browse_frames(video_path: str, caption: Optional[str] = None) -> Tuple[Optio
         _put_multiline(disp, header, (10, 28), 0.7)
         cv2.imshow(win, disp)
 
-        key = cv2.waitKey(25) & 0xFF  # ⬅️ zamiast 0 dajemy 25ms, jak w draw_box_on_image
+        key = cv2.waitKey(25) & 0xFF
 
         if key == 255:  # żadnego klawisza – odświeżaj dalej
             continue
@@ -82,7 +81,6 @@ def browse_frames(video_path: str, caption: Optional[str] = None) -> Tuple[Optio
             idx, frame = goto(idx - 30)
         elif key == ord('w'):
             idx, frame = goto(idx + 30)
-        # inne klawisze – po prostu ignorujemy
 
     cap.release()
     try: cv2.destroyWindow(win)
@@ -142,8 +140,8 @@ def run_team_setup(
     extractor: JerseyColorExtractor,
     top_m_for_proto: int = 2) -> Dict[str, Any]:
     """
-    NOWA WERSJA: dla KAŻDEJ roli najpierw wybierasz klatkę (browse_frames),
-    a dopiero potem rysujesz box na wybranej klatce.
+    WERSJA: dla KAŻDEJ roli najpierw wybierasz klatkę (browse_frames),
+    a dopiero potem wyznaczenie boxa
     """
     team_model: Dict[str, Any] = {}
 
@@ -152,7 +150,7 @@ def run_team_setup(
         caption = f"[{key}] Wybierz klatke (f=zatwierdz, q=wyjście)"
         frame_idx, frame = browse_frames(video_path, caption=caption)
         if frame is None:
-            print(f"⚠︎ pominięto {key} (brak wyboru klatki)")
+            print(f"pominięto {key} (bra k wyboru klatki)")
             team_model[key] = {
                 "centers_ab": np.empty((0,2), np.float32),
                 "weights": np.empty((0,), np.float32),
@@ -188,7 +186,7 @@ def run_team_setup(
 
         roi = frame[y1:y2, x1:x2]
 
-        # 3) Ekstrakcja prototypów kolorów (bez zmian merytorycznych)
+        # 3) Ekstrakcja prototypów kolorów
         analysis = extractor.analyze_roi_direct(roi_bgr=roi, k_override=(2, 2))
         centers, weights = extractor.extract_mixture_for_emd(
             analysis,
@@ -214,7 +212,7 @@ def run_single_role(
     top_m_for_proto: int = 2,
 ):
     """
-    Wersja pod GUI: obsługuje jedną rolę (teamA_player itd.)
+    Wersja pod GUI: obsługuje jedną rolę
     i oprócz prototypów zwraca też swatches_bgr (kolorki do podglądu).
     """
     prompt_map = dict(ROLE_SEQUENCE)
@@ -223,7 +221,7 @@ def run_single_role(
     caption = f"[{key}] Wybierz klatke (f=Wybierz, q=Wyjdz)"
     frame_idx, frame = browse_frames(video_path, caption=caption)
     if frame is None:
-        print(f"⚠︎ pominięto {key} (brak wyboru klatki)")
+        print(f"{key} (brak wyboru klatki)")
         return {
             "centers_ab": np.empty((0, 2), np.float32),
             "weights":    np.empty((0,), np.float32),
@@ -236,7 +234,7 @@ def run_single_role(
 
     rect = draw_box_on_image(frame, prompt=prompt)
     if rect is None:
-        print(f"⚠︎ pominięto {key} (brak boxa)")
+        print(f"pominięto {key} (brak boxa)")
         return {
             "centers_ab": np.empty((0, 2), np.float32),
             "weights":    np.empty((0,), np.float32),
@@ -249,7 +247,7 @@ def run_single_role(
     x1 = max(0, min(x1, W - 1)); x2 = max(0, min(x2, W - 1))
     y1 = max(0, min(y1, H - 1)); y2 = max(0, min(y2, H - 1))
     if x2 <= x1 or y2 <= y1:
-        print(f"⚠︎ pominięto {key} (box ma zerowy rozmiar)")
+        print(f"pominięto {key} (box ma zerowy rozmiar)")
         return {
             "centers_ab": np.empty((0, 2), np.float32),
             "weights":    np.empty((0,), np.float32),
@@ -260,7 +258,7 @@ def run_single_role(
 
     roi = frame[y1:y2, x1:x2]
 
-    # analiza ROI – tu powstają swatches_bgr (lista kolorów BGR)
+    # analiza ROI – (lista kolorów BGR)
     analysis = extractor.analyze_roi_direct(roi_bgr=roi, k_override=(2, 2))
 
     centers, weights = extractor.extract_mixture_for_emd(

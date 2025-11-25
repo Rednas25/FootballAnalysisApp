@@ -57,8 +57,7 @@ def hist2d_pitch01(points: Iterable[Tuple[float, float]],
                    bins: Tuple[int, int] = HM_BINS) -> np.ndarray:
     """
     Buduje histogram 2D (H,W) dla punktów w [0..1]x[0..1].
-    Zwraca macierz int32, gdzie:
-        H = bins[1], W = bins[0]
+    Zwraca macierz int32, gdzie: H = bins[1], W = bins[0]
     """
     W, H = bins
     hm = np.zeros((H, W), dtype=np.int32)
@@ -317,7 +316,7 @@ def save_means_csv(means: Dict[Tuple[str, int], Tuple[float, float, int]],
     """
     Zapisuje dane średnich do CSV.
     Role są ignorowane przy liczeniu średnich – do CSV wpisujemy:
-        'GK' dla numeru 1, 'player' dla pozostałych.
+    'GK' dla numeru 1, 'player' dla pozostałych.
     """
     os.makedirs(os.path.dirname(out_csv), exist_ok=True)
     with open(out_csv, "w", newline="", encoding="utf-8") as f:

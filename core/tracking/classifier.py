@@ -35,15 +35,12 @@ class TeamClassifier:
         )
 
         if centers.size == 0 or weights.size == 0:
-            # nic sensownego nie wyciągnęliśmy z ROI
             if cls_name_lower == "referee":
-                # dla sędziego wracamy do fallbacku: ufamy YOLO
                 return "referee", self.REF_COLOR, None, None
             return None, None, None, None
 
         # 2) Specjalny case: sędzia
         if cls_name_lower == "referee":
-            # mamy prototyp sędziego?
             c_ref, w_ref = self._get_proto("referee")
             cA, wA = self._get_proto("teamA_player")
             cB, wB = self._get_proto("teamB_player")

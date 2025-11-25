@@ -95,7 +95,7 @@ ApplicationWindow {
     }
 
 
-    // F11: przełączanie między Maximized, a FullScreen
+    // F11: przełączanie pomiędzy Maximized, a FullScreen
     Shortcut {
         sequence: "F11"
         onActivated: {

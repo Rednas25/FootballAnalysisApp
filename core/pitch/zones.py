@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Tuple, Optional
-
+# Plik ze strefami boiska, dla potencjalnych ulepszeń roli, przyszłych rozwiązań
 
 PENALTY_DEPTH_X = 16.5 / 105.0
 PENALTY_WIDTH_Y = 40.32 / 68.0
