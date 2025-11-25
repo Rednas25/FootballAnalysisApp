@@ -1531,6 +1531,5 @@
 /old_debugs/KP_debug.py
 /old_debugs/testKP.jpg
 /old_debugs/testKP.png
-assets/models/
 *.pt
 *.onnx
