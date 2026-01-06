@@ -60,7 +60,7 @@ class PitchKeypointsDetectorLB:
             imgsz=self.imgsz,
             verbose=False,
             max_det=1,
-            half=(self.device == "cuda"),  # <- FP16 tylko na GPU(CUDA)
+            half=(self.device == "cuda"),  # FP16 tylko na GPU(CUDA)
         )[0]
 
         pts_dict, conf_dict = {}, {}

@@ -194,17 +194,17 @@ def draw_overlays(
             bx1 = x1c
             bx2 = min(w - 1, x1c + box_w)
 
-            # tło labela na overlay (czarny prostokąt)
+            # tło labela na overlay
             cv2.rectangle(overlay, (bx1, by1), (bx2, by2), (0, 0, 0), -1)
 
             tx = bx1 + pad_x
             ty = by2 - pad_y
             text_items.append((text, (tx, ty), label_color))
 
-        # jeden alpha-blend dla wszystkich labeli naraz
+        # jeden blend dla wszystkich labeli naraz
         frame[:] = cv2.addWeighted(overlay, LABEL_ALPHA, frame, 1 - LABEL_ALPHA, 0.0)
 
-        # teraz tekst na finalnym obrazie
+        # tekst na finalnym obrazie
         for text, (tx, ty), label_color in text_items:
             cv2.putText(
                 frame, text,

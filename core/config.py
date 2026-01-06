@@ -1,14 +1,19 @@
 from dataclasses import dataclass
 from pathlib import Path
 from configparser import ConfigParser
+import sys
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+def _base_dir() -> Path:
+    if hasattr(sys, "_MEIPASS"):
+        return Path(sys._MEIPASS)
+    return Path(__file__).resolve().parent.parent
+
+BASE_DIR = _base_dir()
 ASSETS_DIR = BASE_DIR / "assets"
 MODELS_DIR = ASSETS_DIR / "models"
 PITCH_DIR = ASSETS_DIR / "pitch"
 
 CONFIG_PATH = BASE_DIR / "config.ini"
-
 # ---------------------------------------------------------------------------
 # Wczytywanie config.ini
 # ---------------------------------------------------------------------------

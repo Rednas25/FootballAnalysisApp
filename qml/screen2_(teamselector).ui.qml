@@ -59,7 +59,7 @@ Rectangle {
         y: -13
         width: 115
         height: 86
-        source: "images/image.png"
+        source: "../assets/gui_files/image.png"
         fillMode: Image.PreserveAspectFit
     }
 

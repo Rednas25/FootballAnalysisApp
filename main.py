@@ -9,7 +9,7 @@ from collections import defaultdict
 import csv
 from PySide6.QtGui import QGuiApplication, QImage
 from PySide6.QtQml import QQmlApplicationEngine
-from PySide6.QtCore import QObject, Slot, Signal, QTimer, Property
+from PySide6.QtCore import QObject, Slot, Signal, QTimer, Property, QUrl
 from PySide6.QtQuick import QQuickImageProvider
 import shutil
 import supervision as sv
@@ -17,6 +17,10 @@ import cv2
 from core import (analysis_maps as am, replay_overlays as ro,
     Settings, YoloRunner, JerseyColorExtractor, run_single_role, VideoPipeline,)
 from core.config import (PLAYERS_MODEL_PATH)
+
+def resource_path(rel: str) -> Path:
+    base = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
+    return base / rel
 
 class ReplayImageProvider(QQuickImageProvider):
     """
@@ -129,8 +133,7 @@ class Backend(QObject):
 
         # URL używany w QML
         self._replay_frame_path = ""
-        project_root = Path(__file__).parent
-        default_png = project_root / "assets/gui_files/background_load.png"
+        default_png = resource_path("assets/gui_files/background_load.png")
         if default_png.is_file():
             self._replay_frame_path = "file:///" + str(default_png).replace(os.sep, "/")
 
@@ -325,8 +328,7 @@ class Backend(QObject):
     def _ensure_pitch_minimap(self):
         if self._pitch_minimap is not None:
             return
-        project_root = Path(__file__).parent
-        pitch_path = project_root / "assets" / "pitch" / "pitch.png"
+        pitch_path = resource_path("assets/pitch/pitch.png")
         img = cv2.imread(str(pitch_path))
         if img is None:
             print("[Backend] Minimap: nie mogę wczytać pitch.png:", pitch_path)
@@ -587,8 +589,7 @@ class Backend(QObject):
             return
 
         # Ścieżka do pitch.png
-        project_root = Path(__file__).parent
-        pitch_path = project_root / "assets" / "pitch" / "pitch.png"
+        pitch_path = resource_path("assets/pitch/pitch.png")
 
         pitch_img = am.load_pitch_image(str(pitch_path), size_wh=(am.MAP_WIDTH, am.MAP_HEIGHT))
         try:
@@ -743,8 +744,8 @@ class Backend(QObject):
         overall_dir.mkdir(parents=True, exist_ok=True)
 
         # obraz boiska
-        project_root = Path(__file__).parent
-        pitch_path = project_root / "assets" / "pitch" / "pitch.png"
+        pitch_path = resource_path("assets/pitch/pitch.png")
+
         pitch_img = am.load_pitch_image(str(pitch_path),
                                         size_wh=(am.MAP_WIDTH, am.MAP_HEIGHT))
 
@@ -905,8 +906,7 @@ class Backend(QObject):
 
     @Slot(result=str)
     def getOutputsRoot(self) -> str:
-        project_root = Path(__file__).parent
-        outputs_root = project_root / "Outputs"
+        outputs_root = Path.cwd() / "Outputs"
         return str(outputs_root)
 
     # -------------------------- Sterowanie overlay --------------------------
@@ -1290,10 +1290,10 @@ class Backend(QObject):
 
         def worker():
             try:
-                project_root = Path(__file__).parent
+                outputs_root = Path.cwd() / "Outputs"
+                outputs_root.mkdir(parents=True, exist_ok=True)
 
                 model_path = Path(PLAYERS_MODEL_PATH)
-                outputs_root = project_root / "Outputs"
                 outputs_root.mkdir(parents=True, exist_ok=True)
 
                 label = (run_label or "").strip()
@@ -1437,11 +1437,9 @@ def main():
     backend = Backend(image_provider)
     engine.rootContext().setContextProperty("backend", backend)
 
-    qml_root = Path(__file__).parent / "qml"
+    qml_root = resource_path("qml")
     engine.addImportPath(str(qml_root))
-
-    qml_file = qml_root / "App.qml"
-    engine.load(str(qml_file))
+    engine.load(QUrl.fromLocalFile(str(qml_root / "App.qml")))
 
     if not engine.rootObjects():
         sys.exit(-1)
