@@ -88,7 +88,7 @@ I can't wait to see the results of other projects that will apply this new techn
 
 I plan to explore and test SAM-3-based approaches in a separate future projects, rather than extending this one. 
 
-If you would like to learn more about this project — including its internal design and detailed results — I strongly recommend reviewing the my engineering thesis.  
+If you would like to learn more about this project, including its internal design and detailed results - I strongly recommend to check my engineering thesis.  
 The document will be linked here in the future once it has been formally approved.
 
 
