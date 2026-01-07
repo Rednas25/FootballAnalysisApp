@@ -62,4 +62,36 @@ https://github.com/user-attachments/assets/1bcf3234-f937-426b-817d-81bd73be44e2
 
 https://github.com/user-attachments/assets/d24c3d01-dcc5-4956-8c42-3e64314ab618
 
+## How to Run
+I created exe file to make it easy to test program so you just need to download it and start by clicking icon.
+
+
+Link:
+
+
+The `_internal` folder contains all required resources needed to run the application, including external libraries, YOLO models, and the configuration file, which can be modified to adjust project settings.
+
+## Limitations
+- The system is designed for the analysis of short match fragments rather than full 90-minute games
+- Best results are achieved under limited occlusions and moderate player density
+- Team jersey color classification requires manual initialization
+- The analysis process is computationally intensive due to the chosen system architecture; the use of a CUDA-enabled GPU is therefore recommended
+For a more detailed discussion of these limitations and their underlying reasons, please refer to the engineering thesis.
+
+## Future Work / Project State
+
+At this stage, no further development of the project is planned.
+
+Shortly after the completion of this work, a new generation of segmentation models, such as **SAM-3 (Segment Anything Model)**, was introduced.  
+These models significantly change the landscape of visual understanding by enabling prompt-based, training-free object segmentation, which will probably open new possibilities for sports video analysis. 
+I can't wait to see the results of other projects that will apply this new technology in a sports environment.
+
+I plan to explore and test SAM-3-based approaches in a separate future projects, rather than extending this one. 
+
+If you would like to learn more about this project — including its internal design and detailed results — I strongly recommend reviewing the my engineering thesis.  
+The document will be linked here in the future once it has been formally approved.
+
+
+
+
 
