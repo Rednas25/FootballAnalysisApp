@@ -7,6 +7,9 @@ The user receives an analyzed match fragment with **descriptive, interactive lab
 - Average position maps  
 - Activity (heat) maps  
 
+You can downlaod .exe version here:
+https://drive.google.com/file/d/1Fiizyoj52dJz0ADsAYmtcRvO-ofgqtGr/view?usp=sharing
+
 
 ## Project Background & Motivation
 
