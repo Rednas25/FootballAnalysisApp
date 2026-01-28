@@ -91,6 +91,8 @@ I plan to explore and test SAM-3-based approaches in a separate future projects,
 If you would like to learn more about this project, including its internal design and detailed results - I strongly recommend to check my engineering thesis.  
 The document will be linked here in the future once it has been formally approved.
 23.01.2026 – I successfully defended my engineering thesis. You can find it at the link below, but for now it is available only in Polish.
+
+
 [Kacper_Sieczko_praca_inżynierska.pdf](https://github.com/user-attachments/files/24913203/Kacper_Sieczko_praca_inzynierska.pdf)
 
 
