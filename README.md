@@ -7,10 +7,6 @@ The user receives an analyzed match fragment with **descriptive, interactive lab
 - Average position maps  
 - Activity (heat) maps  
 
-You can downlaod .exe version here:
-https://drive.google.com/file/d/1Fiizyoj52dJz0ADsAYmtcRvO-ofgqtGr/view?usp=sharing
-
-
 ## Project Background & Motivation
 
 This project was developed as an **engineering thesis** at **Wrocław University of Science and Technology**, during the **7th semester** of the **Telecommunications and Informatics** program.
@@ -69,7 +65,7 @@ https://github.com/user-attachments/assets/d24c3d01-dcc5-4956-8c42-3e64314ab618
 I created exe file to make it easy to test program so you just need to download it and start by clicking icon.
 
 
-Link:
+Link: https://drive.google.com/file/d/1Fiizyoj52dJz0ADsAYmtcRvO-ofgqtGr/view?usp=sharing
 
 
 The `_internal` folder contains all required resources needed to run the application, including external libraries, YOLO models, and the configuration file, which can be modified to adjust project settings.
